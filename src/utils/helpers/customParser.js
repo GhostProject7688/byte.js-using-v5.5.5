@@ -2,7 +2,7 @@ class Time {
   /**
    * @param  {number} time
    * @return {{
-   *  object : {
+   *  units : {
    *      years: number,
    *      months: number,
    *      weeks:number,
@@ -22,37 +22,32 @@ class Time {
       time -= res * ms;
       return res;
     };
+    const units = {
+      years: date(31536000000),
+      months: date(2628000000), // Standard month duration
+      weeks: date(604800000),
+      days: date(86400000),
+      hours: date(3600000),
+      minutes: date(60000),
+      seconds: date(1000),
+      ms: date(1),
+    };
     const data = {
-      object: {
-        years: date(31536000000),
-        months: date(2628746000),
-        weeks: date(604800000),
-        days: date(86400000),
-        hours: date(3600000),
-        minutes: date(60000),
-        seconds: date(1000),
-        ms: date(1),
-      },
-      humanize: undefined,
-      toString: undefined,
-    };
-    data.humanize = () => {
-      const string = [];
-      Object.entries(data.object)
-        .slice(0, -1)
-        .forEach((x) => {
-          if (!x[1]) {
-          } else {
-            if (["months", "ms"].includes(x[0])) {
-              string.push(`${x[1]}${x[0].slice(0, 3)}`);
-            } else {
-              string.push(`${x[1]}${x[0].slice(0, 1)}`);
+      units,
+      humanize: () => {
+        const string = [];
+        Object.entries(units)
+          .slice(0, -1)
+          .forEach(([unit, value]) => {
+            if (value) {
+              const abbr = unit === 'months' ? 'mon' : unit.charAt(0);
+              string.push(`${value}${abbr}`);
             }
-          }
-        });
-      return string.join(" ");
+          });
+        return string.join(" ");
+      },
+      toString: () => this.parse(data.humanize()).format,
     };
-    data.toString = () => this.parse(data.humanize()).format;
     return data;
   }
 
@@ -84,7 +79,7 @@ class Time {
         if (x.endsWith("mon") || x.endsWith("M"))
           Hash.set("mon", {
             format: pluralize(Number(x.split("mon")[0].split("M")[0]), "month"),
-            ms: Number(x.split("mon")[0].split("M")[0]) * 2628002880,
+            ms: Number(x.split("mon")[0].split("M")[0]) * 2628000000, // Standard month duration
             order: 2,
           });
         if (x.endsWith("w"))
@@ -144,6 +139,10 @@ class Time {
    * @param  {number} time
    */
   static digital(time) {
+    if (time < 0) {
+      throw new Error("Negative time values are not supported.");
+    }
+
     let seconds = Math.trunc(time / 1000);
     let res = [];
     let i = 0;
